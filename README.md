@@ -43,31 +43,34 @@ the number of cut edges for that solution is displayed.
 The code implements a QUBO formulation of this problem.
 
 The answer that we are looking for is a partition of the nodes in the graph, so
-we will assign a binary variable for each node, i.e. variable `x_i` denotes
+we will assign a binary variable for each node, i.e. variable <img align="center" style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small\,x_i"> denotes
 whether node `i` is in one subset (call it Subset 0) or the other (Subset 1).
 
 The objective function that we want should minimize the number of cut edges. To
 count how many cut edges we have given a partition of the nodes (assignment of
 our binary variables), we start with a single edge.  The table below shows how
 we count the cut edges for a given graph partition (assignment of values to our
-binary variables). Columns `x_i` and `x_j` are two nodes; column edge (i, j)
+binary variables). Columns <img align="center" style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small\,x_i"> and <img align="center" style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small\,x_j"> are two nodes; column <img align="center" style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small\text{edge}(i,j)">
 represents an edge between these two nodes.  We only want to count an edge if
 the endpoints are in different subsets, and so we assign a 1 for the edge column
 in this case and a 0 otherwise.
 
-| x_i | x_j | edge (i,j) |
+| <img align="center" style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small\,x_i"> | <img align="center" style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small\,x_j"> | <img align="center" style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\text{edge}(i,j)"> |
 | :---: | :---: | :---: |
 | 0 | 0 | 0 |
 | 0 | 1 | 1 |
 | 1 | 0 | 1 |
 | 1 | 1 | 0 |
 
-From this table, we see that we can use the expression `x_i+x_j-2x_ix_j`
+From this table, we see that we can use the expression <img align="center" style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small\,x_i+x_j-2x_ix_j">
 to calculate the edge column in our table.  Now for our entire graph, our
 objective function can be written as shown below, where the sum is over all
-edges in the graph, denoted by E.
+edges in the graph, denoted by <img align="center" style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small\,E">.
 
-![QUBO](readme_imgs/QUBO.png)
+<p align="center">
+<img style="filter:invert(1)" 
+src="https://latex.codecogs.com/svg.latex?\large\begin{align*}\text{Objective}=\sum_{(i,j)\in\,E}\left(x_i+x_j-2x_ix_j\right)\end{align*}\">
+</p>
 
 Next we need to consider our constraint:  Subset 0 and Subset 1 must have the
 same sizes.  We can measure the size of Subset 1 by summing up our binary
@@ -75,34 +78,50 @@ variables.  To ensure the two subsets have the same size, we enforce a
 constraint that Subset 1 has size equal to half of all nodes in the graph.  We
 first consider how to represent this constraint mathematically using our chosen
 binary variables, and use the following equality to represent our constraint,
-where V represents the set of all nodes in the graph.
+where <img align="center" style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small\,V"> represents the set of all nodes in the graph.
 
-![Constraint 1](readme_imgs/constraint_1.png)
+<p align="center">
+<img style="filter:invert(1)" 
+src="https://latex.codecogs.com/svg.latex?\large\begin{align*}\sum_{i\in\,V}x_i=\frac{|V|}{2}\end{align*}\">
+</p>
 
 For a QUBO, we need our constraints to be represented by mathematical
 expressions that are satisfied at their minimum value.  For this constraint, we
 can use the following expression that has a minimum value of 0 that occurs when
-Subset 1 has size exactly `|V|/2`.
+Subset 1 has size exactly <img align="center" style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small|V|/2.">
 
-![Constraint 2](readme_imgs/constraint_2.png)
+<p align="center">
+<img style="filter:invert(1)" 
+src="https://latex.codecogs.com/svg.latex?\large\begin{align*}\left(\sum_{i\in\,V}x_i=\frac{|V|}{2}\right)^2\end{align*}\">
+</p>
 
 To simplify this expression and determine the coefficients for our QUBO
 equation, we first multiply out the expression.
 
-![Constraint 3](readme_imgs/constraint_3.png)
+<p align="center">
+<img style="filter:invert(1)" 
+src="https://latex.codecogs.com/svg.latex?\large\begin{align*}\sum_{i\in\,V}x_i^2+\sum_{i\in\,V}\sum_{j>i}2x_ix_j-|V|\cdot\sum_{i\in\,V}x_i+\frac{|V|^2}{4}\end{align*}\">
+</p>
 
 Next we can simplify this expression down to linear and quadratic terms for our
 QUBO.  Recall that for binary variables we can replace any squared term with a
-linear term (since 0^2=0 and 1^2=1), and we can remove any constant terms in
+linear term (since <img style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small\,0^2=0"> and <img style="filter:invert(1)" src="https://latex.codecogs.com/svg.latex?\small\,1^2=1">), and we can remove any constant terms in
 our QUBO.  This results in the following final expression for our constraint.
 
-![Constraint 4](readme_imgs/constraint_4.png)
+<p align="center">
+<img style="filter:invert(1)" 
+src="https://latex.codecogs.com/svg.latex?\large\begin{align*}\text{Constraint}=\sum_{i\in\,V}\left(1-|V|\right)x_i+\sum_{i\in\,V}\sum_{j>i}2x_ix_j\end{align*}\">
+</p>
 
 To combine our objective and constraints into a single QUBO expression, we
 simply add together the objective function and our constraint (multiplied by
-gamma, the Lagrange parameter).
+<img align="center" style="filter:invert(1)" 
+src="https://latex.codecogs.com/svg.latex?\small\gamma">, the [Lagrange parameter](https://en.wikipedia.org/wiki/Lagrange_multiplier)).
 
-![Final QUBO](readme_imgs/final_QUBO.png)
+<p align="center">
+<img style="filter:invert(1)" 
+src="https://latex.codecogs.com/svg.latex?\large\begin{align*}\text{QUBO}=\sum_{(u,v)\in\,E}\left(x_u+x_v-2x_ux_v\right)+\gamma\left(\sum_{i\in\,V}\left(1-|V|\right)x_i+\sum_{i\in\,V}\sum_{j>i}2x_ix_j\right)\end{align*}\">
+</p>
 
 In the code, we create the Q matrix for this QUBO as a dictionary iteratively,
 looping over the edges and nodes in our graph just as we see in the summation
